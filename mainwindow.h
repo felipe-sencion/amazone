@@ -5,6 +5,13 @@
 #include <vector>
 #include "user.h"
 #include <QMessageBox>
+#include <QMenu>
+#include <QAction>
+#include <QFileDialog>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 namespace Ui {
 class MainWindow;
@@ -36,12 +43,21 @@ private slots:
 
     void on_createPB_clicked();
 
+    void openFile();
+
 private:
     Ui::MainWindow *ui;
+    QString fileName;
+    QMenu *fileMenu;
+    QAction *openFileAction;
     vector<User> users;
+    QFile dbFile;
+    QJsonArray jsonDB;
 
     void enableLoginPB();
     void enableCreatePB();
+    void loadDB();
+    void saveDB();
 };
 
 #endif // MAINWINDOW_H

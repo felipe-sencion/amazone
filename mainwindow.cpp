@@ -7,11 +7,17 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    fileMenu = ui->menuBar->addMenu(tr("&Archivo"));
+
+    openFileAction = new QAction(tr("Abrir archivo"), this);
+    connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
+    fileMenu->addAction(openFileAction);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    saveDB();
 }
 
 void MainWindow::enableLoginPB()
@@ -30,6 +36,29 @@ void MainWindow::enableCreatePB()
         ui->createPB->setEnabled(true);
     else
         ui->createPB->setEnabled(false);
+}
+
+void MainWindow::loadDB()
+{
+    dbFile.open(QIODevice::ReadOnly);
+    QByteArray data = dbFile.readAll();
+    QJsonDocument jsonDoc = QJsonDocument(QJsonDocument::fromJson(data));
+    QJsonObject jsonObj = jsonDoc.object();
+    jsonDB = jsonObj["users"].toArray();
+
+    dbFile.close();
+}
+
+void MainWindow::saveDB()
+{
+    dbFile.open(QIODevice::WriteOnly);
+    QJsonObject jsonObj;
+    QJsonDocument jsonDoc;
+    jsonObj["users"] = jsonDB;
+    jsonDoc = QJsonDocument(jsonObj);
+
+    dbFile.write(jsonDoc.toJson());
+    dbFile.close();
 }
 
 void MainWindow::on_emailLE_textChanged(const QString &arg1)
@@ -123,10 +152,16 @@ void MainWindow::on_createPB_clicked()
     }
     if (i == users.size())
     {
+        QJsonObject jsonObj;
         u.setName(ui->newNameLE->text());
         u.setEmail(ui->newMailLE->text());
         u.setPassword(ui->newPasswordLE->text());
         users.push_back(u);
+
+        jsonObj["name"] = ui->newNameLE->text();
+        jsonObj["email"] = ui->newMailLE->text();
+        jsonObj["password"] = ui->newPasswordLE->text();
+        jsonDB.append(jsonObj);
         message.setText("Usuario creado con éxito");
         message.setIcon(QMessageBox::Information);
         idx = 0;
@@ -136,4 +171,14 @@ void MainWindow::on_createPB_clicked()
     ui->newMailLE->clear();
     ui->newPasswordLE->clear();
     ui->amazoneSW->setCurrentIndex(idx);
+}
+
+void MainWindow::openFile()
+{
+    fileName = QFileDialog::getOpenFileName(this, "Amazone DB", "", "archivos JSON (*.json)");
+    if (fileName != "")
+    {
+        dbFile.setFileName(fileName);
+        loadDB();
+    }
 }
