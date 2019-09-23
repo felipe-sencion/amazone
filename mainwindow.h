@@ -12,6 +12,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "productwidget.h"
+#include <QListWidgetItem>
 
 namespace Ui {
 class MainWindow;
@@ -45,6 +47,8 @@ private slots:
 
     void openFile();
 
+    void on_departmentDB_currentIndexChanged(const QString &arg1);
+
 private:
     Ui::MainWindow *ui;
     QString fileName;
@@ -53,11 +57,13 @@ private:
     vector<User> users;
     QFile dbFile;
     QJsonArray jsonDB;
+    QJsonArray products;
 
     void enableLoginPB();
     void enableCreatePB();
     void loadDB();
     void saveDB();
+    void clearProductsArea();
 };
 
 #endif // MAINWINDOW_H

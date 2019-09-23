@@ -379,7 +379,79 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="amazonePage"/>
+      <widget class="QWidget" name="amazonePage">
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="QComboBox" name="departmentDB">
+          <property name="currentText">
+           <string>Todos los Departamentos</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>Todos los Departamentos</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Alimentos y Bebidas</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Libros</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Electrónicos</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Hogar y Cocina</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Deportes y Aire Libre</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QScrollArea" name="auxScrollArea">
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(255, 255, 255);</string>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>762</width>
+             <height>470</height>
+            </rect>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_7">
+            <property name="sizeConstraint">
+             <enum>QLayout::SetMinAndMaxSize</enum>
+            </property>
+            <item row="0" column="0">
+             <layout class="QGridLayout" name="auxGrid">
+              <property name="sizeConstraint">
+               <enum>QLayout::SetFixedSize</enum>
+              </property>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -45,7 +46,23 @@ void MainWindow::loadDB()
     QJsonDocument jsonDoc = QJsonDocument(QJsonDocument::fromJson(data));
     QJsonObject jsonObj = jsonDoc.object();
     jsonDB = jsonObj["users"].toArray();
-
+    products = jsonObj["products"].toArray();
+    for (int i(0); i < jsonDB.size(); ++i)
+    {
+        User u;
+        QJsonObject o = jsonDB[i].toObject();
+        u.setEmail(o["email"].toString());
+        u.setName(o["name"].toString());
+        u.setPassword(o["password"].toString());
+        users.push_back(u);
+    }
+    for (int i(0); i < products.size(); ++i)
+    {
+        QJsonObject o = products[i].toObject();
+        ProductWidget *p;
+        p = new ProductWidget(o["id"].toString(), o["name"].toString(), ui->auxScrollArea);
+        ui->auxGrid->addWidget(p, i/3, i%3, Qt::AlignCenter);
+    }
     dbFile.close();
 }
 
@@ -55,10 +72,21 @@ void MainWindow::saveDB()
     QJsonObject jsonObj;
     QJsonDocument jsonDoc;
     jsonObj["users"] = jsonDB;
+    jsonObj["products"] = products;
     jsonDoc = QJsonDocument(jsonObj);
 
     dbFile.write(jsonDoc.toJson());
     dbFile.close();
+}
+
+void MainWindow::clearProductsArea()
+{
+    QLayoutItem* item;
+    while( (item = ui->auxGrid->takeAt(0)) )
+    {
+        delete item->widget();
+        delete item;
+    }
 }
 
 void MainWindow::on_emailLE_textChanged(const QString &arg1)
@@ -86,6 +114,7 @@ void MainWindow::on_loginPB_clicked()
             if (users.at(i).getPassword() == ui->passwordLE->text())
             {
                 ui->amazoneSW->setCurrentIndex(2);
+                this->setMinimumSize(1000, 600);
                 break;
             }
             else
@@ -180,5 +209,50 @@ void MainWindow::openFile()
     {
         dbFile.setFileName(fileName);
         loadDB();
+    }
+}
+
+void MainWindow::on_departmentDB_currentIndexChanged(const QString &arg1)
+{
+    int counter = 0;
+    char pattern;
+
+    clearProductsArea();
+    if (ui->departmentDB->currentIndex() == 0)
+    {
+        for (int i(0); i < products.size(); ++i)
+        {
+            QJsonObject o = products[i].toObject();
+            ProductWidget *p;
+
+            p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+            ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+            ++counter;
+        }
+    }
+    else
+    {
+        if (arg1 == "Alimentos y Bebidas")
+            pattern = 'A';
+        else if (arg1 == "Libros")
+            pattern = 'L';
+        else if (arg1 == "Electrónicos")
+            pattern = 'E';
+        else if (arg1 == "Hogar y Cocina")
+            pattern = 'H';
+        else
+            pattern = 'D';
+
+        for (int i(0); i < products.size(); ++i)
+        {
+            QJsonObject o = products[i].toObject();
+            if (o["id"].toString()[0] == pattern)
+            {
+                ProductWidget *p;
+                p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                ++counter;
+            }
+        }
     }
 }
