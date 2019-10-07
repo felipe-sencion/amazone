@@ -301,6 +301,11 @@
             "email": "LUCERO.MENDEZ@AMZ.com",
             "name": "LUCERO MENDEZ",
             "password": "LUME032"
+        },
+        {
+            "email": "aa@aa.com",
+            "name": "aa",
+            "password": "123"
         }
     ]
 }
