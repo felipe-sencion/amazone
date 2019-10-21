@@ -49,6 +49,10 @@ private slots:
 
     void on_departmentDB_currentIndexChanged(const QString &arg1);
 
+    void on_searchLE_textChanged(const QString &arg1);
+
+    void on_sortCB_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
     QString fileName;
@@ -58,6 +62,7 @@ private:
     QFile dbFile;
     QJsonArray jsonDB;
     QJsonArray products;
+    QJsonArray productsCopy;
 
     void enableLoginPB();
     void enableCreatePB();

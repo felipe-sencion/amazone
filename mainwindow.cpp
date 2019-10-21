@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <QScrollArea>
+#include <algorithm>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -47,6 +48,7 @@ void MainWindow::loadDB()
     QJsonObject jsonObj = jsonDoc.object();
     jsonDB = jsonObj["users"].toArray();
     products = jsonObj["products"].toArray();
+    productsCopy = products;
     for (int i(0); i < jsonDB.size(); ++i)
     {
         User u;
@@ -60,7 +62,7 @@ void MainWindow::loadDB()
     {
         QJsonObject o = products[i].toObject();
         ProductWidget *p;
-        p = new ProductWidget(o["id"].toString(), o["name"].toString(), ui->auxScrollArea);
+        p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
         ui->auxGrid->addWidget(p, i/3, i%3, Qt::AlignCenter);
     }
     dbFile.close();
@@ -217,12 +219,13 @@ void MainWindow::on_departmentDB_currentIndexChanged(const QString &arg1)
     int counter = 0;
     char pattern;
 
+    ui->searchLE->clear();
     clearProductsArea();
     if (ui->departmentDB->currentIndex() == 0)
     {
-        for (int i(0); i < products.size(); ++i)
+        for (int i(0); i < productsCopy.size(); ++i)
         {
-            QJsonObject o = products[i].toObject();
+            QJsonObject o = productsCopy[i].toObject();
             ProductWidget *p;
 
             p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
@@ -243,9 +246,9 @@ void MainWindow::on_departmentDB_currentIndexChanged(const QString &arg1)
         else
             pattern = 'D';
 
-        for (int i(0); i < products.size(); ++i)
+        for (int i(0); i < productsCopy.size(); ++i)
         {
-            QJsonObject o = products[i].toObject();
+            QJsonObject o = productsCopy[i].toObject();
             if (o["id"].toString()[0] == pattern)
             {
                 ProductWidget *p;
@@ -255,4 +258,165 @@ void MainWindow::on_departmentDB_currentIndexChanged(const QString &arg1)
             }
         }
     }
+}
+
+bool leq(QJsonValue o1, QJsonValue o2)
+{
+    return o1.toObject()["price"].toDouble() < o2.toObject()["price"].toDouble();
+}
+
+bool geq(QJsonValue o1, QJsonValue o2)
+{
+    return o1.toObject()["price"].toDouble() > o2.toObject()["price"].toDouble();
+}
+
+inline void swap(QJsonValueRef v1, QJsonValueRef v2)
+{
+    QJsonValue temp(v1);
+    v1 = QJsonValue(v2);
+    v2 = temp;
+}
+
+void MainWindow::on_searchLE_textChanged(const QString &arg1)
+{
+    int counter = 0;
+    char pattern;
+
+    clearProductsArea();
+    if (ui->departmentDB->currentIndex() == 0)
+    {
+        for (int i(0); i < productsCopy.size(); ++i)
+        {
+            QJsonObject o = productsCopy[i].toObject();
+
+            if (o["name"].toString().contains(arg1, Qt::CaseInsensitive))
+            {
+                ProductWidget *p;
+                p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                ++counter;
+            }
+        }
+    }
+    else
+    {
+        if (ui->departmentDB->currentText() == "Alimentos y Bebidas")
+            pattern = 'A';
+        else if (ui->departmentDB->currentText() == "Libros")
+            pattern = 'L';
+        else if (ui->departmentDB->currentText() == "Electrónicos")
+            pattern = 'E';
+        else if (ui->departmentDB->currentText() == "Hogar y Cocina")
+            pattern = 'H';
+        else
+            pattern = 'D';
+
+        for (int i(0); i < productsCopy.size(); ++i)
+        {
+            QJsonObject o = productsCopy[i].toObject();
+            if (o["id"].toString()[0] == pattern && o["name"].toString().contains(arg1, Qt::CaseInsensitive))
+            {
+                ProductWidget *p;
+                p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                ++counter;
+            }
+        }
+    }
+}
+
+void MainWindow::on_sortCB_currentIndexChanged(int index)
+{
+    int counter = 0;
+    char pattern;
+    clearProductsArea();
+    if (index == 1)
+        sort(productsCopy.begin(), productsCopy.end(), geq);
+    else if (index == 2)
+        sort(productsCopy.begin(), productsCopy.end(), leq);
+
+    if (ui->searchLE->text().length() == 0)
+    {
+        if (ui->departmentDB->currentIndex() == 0)
+        {
+            for (int i(0); i < productsCopy.size(); ++i)
+            {
+                QJsonObject o = productsCopy[i].toObject();
+                ProductWidget *p;
+
+                p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                ++counter;
+            }
+        }
+        else
+        {
+            if (ui->departmentDB->currentText() == "Alimentos y Bebidas")
+                pattern = 'A';
+            else if (ui->departmentDB->currentText() == "Libros")
+                pattern = 'L';
+            else if (ui->departmentDB->currentText() == "Electrónicos")
+                pattern = 'E';
+            else if (ui->departmentDB->currentText() == "Hogar y Cocina")
+                pattern = 'H';
+            else
+                pattern = 'D';
+
+            for (int i(0); i < productsCopy.size(); ++i)
+            {
+                QJsonObject o = productsCopy[i].toObject();
+                if (o["id"].toString()[0] == pattern)
+                {
+                    ProductWidget *p;
+                    p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                    ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                    ++counter;
+                }
+            }
+        }
+    }
+    else
+    {
+        if (ui->departmentDB->currentIndex() == 0)
+        {
+            for (int i(0); i < productsCopy.size(); ++i)
+            {
+                QJsonObject o = productsCopy[i].toObject();
+
+                if (o["name"].toString().contains(ui->searchLE->text(), Qt::CaseInsensitive))
+                {
+                    ProductWidget *p;
+                    p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                    ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                    ++counter;
+                }
+            }
+        }
+        else
+        {
+            if (ui->departmentDB->currentText() == "Alimentos y Bebidas")
+                pattern = 'A';
+            else if (ui->departmentDB->currentText() == "Libros")
+                pattern = 'L';
+            else if (ui->departmentDB->currentText() == "Electrónicos")
+                pattern = 'E';
+            else if (ui->departmentDB->currentText() == "Hogar y Cocina")
+                pattern = 'H';
+            else
+                pattern = 'D';
+
+            for (int i(0); i < productsCopy.size(); ++i)
+            {
+                QJsonObject o = productsCopy[i].toObject();
+                if (o["id"].toString()[0] == pattern && o["name"].toString().contains(ui->searchLE->text(), Qt::CaseInsensitive))
+                {
+                    ProductWidget *p;
+                    p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                    ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
+                    ++counter;
+                }
+            }
+        }
+    }
+
 }
