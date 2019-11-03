@@ -405,7 +405,7 @@
             <item row="0" column="0">
              <layout class="QGridLayout" name="auxGrid">
               <property name="sizeConstraint">
-               <enum>QLayout::SetFixedSize</enum>
+               <enum>QLayout::SetMinAndMaxSize</enum>
               </property>
              </layout>
             </item>

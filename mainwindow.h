@@ -53,6 +53,8 @@ private slots:
 
     void on_sortCB_currentIndexChanged(int index);
 
+    void addProduct(int amount);
+
 private:
     Ui::MainWindow *ui;
     QString fileName;
@@ -63,6 +65,9 @@ private:
     QJsonArray jsonDB;
     QJsonArray products;
     QJsonArray productsCopy;
+    int userIndex;
+    QJsonArray purchase;
+    QJsonArray newPurchase;
 
     void enableLoginPB();
     void enableCreatePB();

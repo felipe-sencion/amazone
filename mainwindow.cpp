@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QScrollArea>
 #include <algorithm>
+#include <QDateTime>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     openFileAction = new QAction(tr("Abrir archivo"), this);
     connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
     fileMenu->addAction(openFileAction);
+    qDebug()<<QDateTime::currentDateTime().toString("dd/MM/yy HH:mm:ss");
 }
 
 MainWindow::~MainWindow()
@@ -63,6 +65,10 @@ void MainWindow::loadDB()
         QJsonObject o = products[i].toObject();
         ProductWidget *p;
         p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+        connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+        p->setId(o["id"].toString());
+        p->setDescription(o["name"].toString());
+        p->setSold(o["sold"].toInt());
         ui->auxGrid->addWidget(p, i/3, i%3, Qt::AlignCenter);
     }
     dbFile.close();
@@ -73,6 +79,15 @@ void MainWindow::saveDB()
     dbFile.open(QIODevice::WriteOnly);
     QJsonObject jsonObj;
     QJsonDocument jsonDoc;
+    QJsonObject o = jsonDB[userIndex].toObject();
+    if (newPurchase.size() > 0)
+    {
+        QJsonObject pO;
+        pO[QDateTime::currentDateTime().toString("dd/MM/yy HH:mm:ss")] = newPurchase;
+        purchase.append(pO);
+    }
+    o["purchase"] = purchase;
+    jsonDB[userIndex] = o;
     jsonObj["users"] = jsonDB;
     jsonObj["products"] = products;
     jsonDoc = QJsonDocument(jsonObj);
@@ -117,6 +132,8 @@ void MainWindow::on_loginPB_clicked()
             {
                 ui->amazoneSW->setCurrentIndex(2);
                 this->setMinimumSize(1000, 600);
+                userIndex = i;
+                purchase = jsonDB[i].toObject()["purchase"].toArray();
                 break;
             }
             else
@@ -229,6 +246,10 @@ void MainWindow::on_departmentDB_currentIndexChanged(const QString &arg1)
             ProductWidget *p;
 
             p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+            connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+            p->setId(o["id"].toString());
+            p->setDescription(o["name"].toString());
+            p->setSold(o["sold"].toInt());
             ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
             ++counter;
         }
@@ -253,6 +274,10 @@ void MainWindow::on_departmentDB_currentIndexChanged(const QString &arg1)
             {
                 ProductWidget *p;
                 p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                p->setId(o["id"].toString());
+                p->setDescription(o["name"].toString());
+                p->setSold(o["sold"].toInt());
                 ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                 ++counter;
             }
@@ -293,6 +318,10 @@ void MainWindow::on_searchLE_textChanged(const QString &arg1)
             {
                 ProductWidget *p;
                 p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                p->setId(o["id"].toString());
+                p->setDescription(o["name"].toString());
+                p->setSold(o["sold"].toInt());
                 ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                 ++counter;
             }
@@ -318,6 +347,10 @@ void MainWindow::on_searchLE_textChanged(const QString &arg1)
             {
                 ProductWidget *p;
                 p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                p->setId(o["id"].toString());
+                p->setDescription(o["name"].toString());
+                p->setSold(o["sold"].toInt());
                 ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                 ++counter;
             }
@@ -345,6 +378,10 @@ void MainWindow::on_sortCB_currentIndexChanged(int index)
                 ProductWidget *p;
 
                 p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                p->setId(o["id"].toString());
+                p->setDescription(o["name"].toString());
+                p->setSold(o["sold"].toInt());
                 ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                 ++counter;
             }
@@ -369,6 +406,10 @@ void MainWindow::on_sortCB_currentIndexChanged(int index)
                 {
                     ProductWidget *p;
                     p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                    connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                    p->setId(o["id"].toString());
+                    p->setDescription(o["name"].toString());
+                    p->setSold(o["sold"].toInt());
                     ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                     ++counter;
                 }
@@ -387,6 +428,10 @@ void MainWindow::on_sortCB_currentIndexChanged(int index)
                 {
                     ProductWidget *p;
                     p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                    connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                    p->setId(o["id"].toString());
+                    p->setDescription(o["name"].toString());
+                    p->setSold(o["sold"].toInt());
                     ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                     ++counter;
                 }
@@ -412,6 +457,10 @@ void MainWindow::on_sortCB_currentIndexChanged(int index)
                 {
                     ProductWidget *p;
                     p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->auxScrollArea);
+                    connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+                    p->setId(o["id"].toString());
+                    p->setDescription(o["name"].toString());
+                    p->setSold(o["sold"].toInt());
                     ui->auxGrid->addWidget(p, counter/3, counter%3, Qt::AlignCenter);
                     ++counter;
                 }
@@ -419,4 +468,24 @@ void MainWindow::on_sortCB_currentIndexChanged(int index)
         }
     }
 
+}
+
+void MainWindow::addProduct(int amount)
+{
+    qDebug()<<"add: " << static_cast<ProductWidget*>(sender())->getDescription();
+    ProductWidget* p = static_cast<ProductWidget*>(sender());
+    QJsonObject o;
+    o["id"] = p->getId();
+    //purchase.append(o);
+    newPurchase.append(o);
+    for (int i(0); i < products.size(); ++i)
+    {
+        o = products[i].toObject();
+        if (o["id"] == p->getId())
+        {
+            o["sold"] = p->getSold() + amount;
+            products[i] = o;
+            break;
+        }
+    }
 }
