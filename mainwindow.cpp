@@ -5,6 +5,14 @@
 #include <algorithm>
 #include <QDateTime>
 
+bool compare(const QJsonObject& lhs, QJsonObject& rhs)
+{
+    return lhs["sold"].toInt() < rhs["sold"].toInt();
+}
+
+std::priority_queue<QJsonObject, std::vector<QJsonObject>,
+decltype(&compare)> pq(compare);
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -44,6 +52,8 @@ void MainWindow::enableCreatePB()
 
 void MainWindow::loadDB()
 {
+    //std::priority_queue<QJsonObject, std::vector<QJsonObject>,
+    //                    decltype(&compare)> pq(compare);
     dbFile.open(QIODevice::ReadOnly);
     QByteArray data = dbFile.readAll();
     QJsonDocument jsonDoc = QJsonDocument(QJsonDocument::fromJson(data));
@@ -58,8 +68,66 @@ void MainWindow::loadDB()
         u.setEmail(o["email"].toString());
         u.setName(o["name"].toString());
         u.setPassword(o["password"].toString());
+        qDebug()<<"Las compras de " <<o["name"].toString() <<"Fueron: ";
+        for (QJsonValueRef p : o["purchase"].toArray())
+        {
+            QStringList dates = p.toObject().keys();
+            for (QString d : dates)
+            {
+                qDebug() <<d;
+                QJsonArray boughtProducts = p.toObject()[d].toArray();
+                for (int i(0); i < boughtProducts.size()-1; ++i)
+                {
+                    QString originName = boughtProducts[i].toObject()["id"].toString();
+                    QHash<QString, int> edges;
+                    if (grafo.contains(originName))
+                        edges = grafo[originName];
+                    qDebug() <<originName;
+                    for (int j(i+1); j < boughtProducts.size(); ++j)
+                    {
+                        QHash<QString, int> symetricalEdge;
+                        QString destinationName = boughtProducts[j].toObject()["id"].toString();
+                        if (edges.contains(destinationName))
+                            edges[destinationName]++;
+                        else
+                            edges[destinationName] = 1;
+                        if (grafo.contains(destinationName))
+                        {
+                            symetricalEdge = grafo[destinationName];
+                            if (symetricalEdge.contains(originName))
+                                symetricalEdge[originName]++;
+                            else
+                                symetricalEdge[originName] = 1;
+                        }
+                        else
+                            symetricalEdge[originName] = 1;
+                        qDebug()<<"\tcon " <<destinationName;
+                        grafo[destinationName] = symetricalEdge;
+
+                    }
+                    grafo[originName] = edges;
+                }
+            }
+        }
         users.push_back(u);
     }
+    QHash<QString, QHash<QString, int> >::iterator originIterator;
+    originIterator = grafo.begin();
+    while(originIterator != grafo.end())
+    {
+        QHash<QString, int>::iterator destinationIterator;
+        destinationIterator = originIterator.value().begin();
+        qDebug()<<originIterator.key();
+        while(destinationIterator != originIterator.value().end())
+        {
+            qDebug()<<"\t" <<destinationIterator.key()
+                   <<":" <<destinationIterator.value();
+            ++destinationIterator;
+        }
+        ++originIterator;
+    }
+
+
     for (int i(0); i < products.size(); ++i)
     {
         QJsonObject o = products[i].toObject();
@@ -70,6 +138,19 @@ void MainWindow::loadDB()
         p->setDescription(o["name"].toString());
         p->setSold(o["sold"].toInt());
         ui->auxGrid->addWidget(p, i/3, i%3, Qt::AlignCenter);
+        pq.push(o);
+    }
+    for (int i(0); i < 3; ++i)
+    {
+        ProductWidget *p;
+        QJsonObject o = pq.top();
+        pq.pop();
+        p = new ProductWidget(o["id"].toString(), o["name"].toString() + "\n\n$" + QString::number(o["price"].toDouble()), ui->recommendationSA);
+        connect(p, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+        p->setId(o["id"].toString());
+        p->setDescription(o["name"].toString());
+        p->setSold(o["sold"].toInt());
+        ui->horizontalLayout->addWidget(p, 0);
     }
     dbFile.close();
 }
@@ -106,6 +187,32 @@ void MainWindow::clearProductsArea()
     }
 }
 
+QJsonObject MainWindow::getProductById(QString id)
+{
+    QJsonObject obj;
+    qDebug()<<"Buscando: " <<id;
+    for(int i(0); i < productsCopy.size(); ++i)
+    {
+        if(productsCopy[i].toObject()["id"].toString() == id)
+        {
+            obj = productsCopy[i].toObject();
+            qDebug()<<"Encontrado: ";
+            break;
+        }
+    }
+    return obj;
+}
+
+void MainWindow::clearRecommendations()
+{
+    QLayoutItem* item;
+    while( (item = ui->horizontalLayout->takeAt(0)) )
+    {
+        delete item->widget();
+        delete item;
+    }
+}
+
 void MainWindow::on_emailLE_textChanged(const QString &arg1)
 {
     Q_UNUSED(arg1);
@@ -131,7 +238,7 @@ void MainWindow::on_loginPB_clicked()
             if (users.at(i).getPassword() == ui->passwordLE->text())
             {
                 ui->amazoneSW->setCurrentIndex(2);
-                this->setMinimumSize(1000, 600);
+                this->setMinimumSize(1200, 700);
                 userIndex = i;
                 purchase = jsonDB[i].toObject()["purchase"].toArray();
                 break;
@@ -472,10 +579,14 @@ void MainWindow::on_sortCB_currentIndexChanged(int index)
 
 void MainWindow::addProduct(int amount)
 {
-    qDebug()<<"add: " << static_cast<ProductWidget*>(sender())->getDescription();
+    ui->descriptionLabel->setText("Tal vez te interese:");
+    int displayedRecommendations = 0;
+    //qDebug()<<"add: " << static_cast<ProductWidget*>(sender())->getDescription();
     ProductWidget* p = static_cast<ProductWidget*>(sender());
+    QJsonObject op = getProductById(p->getId());
+    QString senderName = p->getId();
     QJsonObject o;
-    o["id"] = p->getId();
+    o["id"] = op["id"].toString();
     //purchase.append(o);
     newPurchase.append(o);
     for (int i(0); i < products.size(); ++i)
@@ -483,9 +594,63 @@ void MainWindow::addProduct(int amount)
         o = products[i].toObject();
         if (o["id"] == p->getId())
         {
-            o["sold"] = p->getSold() + amount;
+            o["sold"] = op["sold"].toInt() + amount;
             products[i] = o;
             break;
         }
     }
+
+    clearRecommendations();
+    while(!pq.empty())
+        pq.pop();
+    qDebug()<<pq.size();
+
+    o = getProductById(p->getId());
+    //qDebug()<<"El tamaño de purchase es: " <<newPurchase.size();
+    //qDebug()<<"En cola agregando:";
+    for (int i(0); i < newPurchase.size(); ++i)
+    {
+        QJsonObject cartItem = newPurchase[i].toObject();
+        qDebug()<<"cartItemId: " <<cartItem["id"].toString();
+        QHash<QString, int> recommendationsHash = grafo[cartItem["id"].toString()];
+        QHash<QString, int>::Iterator it = recommendationsHash.begin();
+        while (it != recommendationsHash.end())
+        {
+            //qDebug()<<"ESTE ES UN MENSAJE MUY IMPORTANTE: " <<it.value();
+            QJsonObject rec = getProductById(it.key());
+            rec["sold"] = it.value();
+            //pq.push(getProductById(it.key()));
+            pq.push(rec);
+            qDebug()<<cartItem["id"].toString() <<"," <<it.key() <<":" <<it.value();
+            ++it;
+        }
+    }
+    QStringList added;
+    while(!pq.empty() && displayedRecommendations < 13)
+    {
+        QJsonObject item = pq.top();
+        //qDebug()<<"En top " <<item["id"];
+        pq.pop();
+        QJsonObject temp;
+        temp["id"] = item["id"].toString();
+        if (item["id"].toString() != senderName &&
+                !added.contains(item["id"].toString()) &&
+                !newPurchase.contains(temp))
+        {
+            //qDebug()<<"Added size: " <<added.size();
+            ProductWidget* w;
+            w = new ProductWidget(item["id"].toString(), item["name"].toString() + "\n\n$" + QString::number(item["price"].toDouble()), ui->recommendationSA);
+            connect(w, SIGNAL(added(int)), this, SLOT(addProduct(int)));
+            w->setId(item["id"].toString());
+            w->setDescription(item["name"].toString());
+            w->setSold(item["sold"].toInt());
+            ui->horizontalLayout->addWidget(w, 0);
+            qDebug()<<"En recomendaciones:" <<w->getId() <<"," <<w->getDescription() <<"," <<w->getSold();
+            ++displayedRecommendations;
+            added.push_back(item["id"].toString());
+            //qDebug()<<"Added: " <<item["id"].toString();
+        }
+    }
+
+
 }

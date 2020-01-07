@@ -27,6 +27,8 @@ public:
 private slots:
     void on_addPB_clicked();
 
+    void on_amountSB_valueChanged(int arg1);
+
 signals:
     void added(int amount);
 

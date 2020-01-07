@@ -14,6 +14,8 @@
 #include <QJsonArray>
 #include "productwidget.h"
 #include <QListWidgetItem>
+#include <QHash>
+#include <queue>
 
 namespace Ui {
 class MainWindow;
@@ -68,12 +70,14 @@ private:
     int userIndex;
     QJsonArray purchase;
     QJsonArray newPurchase;
-
+    QHash<QString, QHash<QString, int>> grafo;
     void enableLoginPB();
     void enableCreatePB();
     void loadDB();
     void saveDB();
     void clearProductsArea();
+    QJsonObject getProductById(QString id);
+    void clearRecommendations();
 };
 
 #endif // MAINWINDOW_H

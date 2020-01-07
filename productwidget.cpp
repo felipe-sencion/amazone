@@ -8,8 +8,10 @@ ProductWidget::ProductWidget(QString imageFile, QString description, QWidget *pa
     ui(new Ui::ProductWidget)
 {
     ui->setupUi(this);
-    ui->imageLabel->setPixmap(QPixmap(":/imgs/" + imageFile + ".jpg").scaled(160, 160, Qt::KeepAspectRatio));
+    ui->imageLabel->setPixmap(QPixmap(":/imgs/" + imageFile + ".jpg").scaled(120, 120, Qt::KeepAspectRatio));
     ui->productLabel->setText(description);
+    //id = imageFile;
+    //this->description = description;
 }
 
 ProductWidget::~ProductWidget()
@@ -51,4 +53,12 @@ QString ProductWidget::getDescription() const
 void ProductWidget::setDescription(const QString &value)
 {
     description = value;
+}
+
+void ProductWidget::on_amountSB_valueChanged(int arg1)
+{
+    if (arg1 > 0)
+        ui->addPB->setEnabled(true);
+    else
+        ui->addPB->setEnabled(false);
 }
